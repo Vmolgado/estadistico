@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TTC Portal Estadísticas</title>
+  <link rel="icon" type="image/png" href="logo.png">
+
+  <!-- Librerías Chart.js y Chart.js Datalabels -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-datalabels@2.2.0"></script>
+
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f8f9fa;
+      color: #333;
+      margin: 0;
+      padding: 0;
+    }
+    header {
+      background-color: #007bff;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 20px;
+      position: relative;
+    }
+    header .logo {
+      height: 50px;
+    }
+    header .header-title {
+      position: absolute;
+      left: 50%;
+      transform: translateX(-50%);
+      font-size: 36px;
+      font-weight: bold;
+    }
+    main {
+      margin: 20px auto;
+      width: 90%;
+      max-width: 1200px;
+    }
+    h2 {
+      text-align: center;
+      color: #007bff;
+      margin-bottom: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+    }
+    th, td {
+      border: 1px solid #ddd;
+      padding: 10px;
+      text-align: center;
+    }
+    th {
+      background-color: #007bff;
+      color: #fff;
+    }
+    tr:nth-child(even) {
+      background-color: #f2f2f2;
+    }
+    .bold {
+      font-weight: bold;
+    }
+    canvas {
+      margin: 20px auto;
+      display: block;
+    }
+    footer {
+      text-align: center;
+      padding: 10px 0;
+      background-color: #007bff;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <img src="logo.png" alt="Logo" class="logo">
+    <div class="header-title">Instalaciones y Revisiones Fuel / AVL</div>
+  </header>
+
+  <main>
+    <!-- Tabla Estadísticas Mensuales -->
+    <h2>Tabla Estadísticas Mensuales</h2>
+    <table id="data-table">
+      <thead>
+        <tr>
+          <th>Mes</th>
+          <th>AVL Instalaciones</th>
+          <th>Fuel Instalaciones</th>
+          <th>AVL Revisiones</th>
+          <th>Fuel Revisiones</th>
+          <th>Total</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <!-- Gráfico de Comparación por Columnas -->
+    <h2>Gráfico de Comparación por Columnas</h2>
+    <canvas id="comparison-chart" width="2000" height="700"></canvas>
+
+    <!-- Gráfico Comparativo General -->
+    <h2>Gráfico Comparativo General</h2>
+    <canvas id="chart" width="2000" height="700"></canvas>
+  </main>
+
+  <footer>© 2024 TTC Portal Estadísticas Versión 1.0.2</footer>
+
+  <!-- Archivo de Script JavaScript -->
+  <script src="script.js"></script>
+</body>
+</html>
