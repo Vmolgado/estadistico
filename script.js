@@ -28,7 +28,6 @@ fetch(URL)
   .then(response => response.json())
   .then(data => {
     const values = data.values;
-
     if (!values || values.length === 0) {
       console.error("No se encontraron datos en la hoja.");
       return;
@@ -36,36 +35,57 @@ fetch(URL)
 
     const groupedData = {};
     let totalAVLInst = 0, totalFuelInst = 0, totalAVLRev = 0, totalFuelRev = 0;
+    let totalVideoInst = 0, totalVideoRev = 0;
 
     for (let i = 1; i < values.length; i++) {
       const mes = values[i][2]?.trim().toLowerCase();
-      const estatus = values[i][12]?.trim();
-      const tipoServicio = values[i][8]?.trim();
-      const tipoHardware = values[i][15]?.trim();
+      const estatus = values[i][12]?.trim()?.toUpperCase();
+      const tipoServicio = values[i][8]?.trim()?.toUpperCase();
+      const tipoHardware = values[i][15]?.trim()?.toUpperCase();
 
       if (estatus !== "REALIZADO" || !MES_ORDENADO.includes(mes)) continue;
 
       if (!groupedData[mes]) {
-        groupedData[mes] = { avlInst: 0, fuelInst: 0, avlRev: 0, fuelRev: 0, total: 0 };
+        groupedData[mes] = {
+          avlInst: 0, fuelInst: 0, videoInst: 0,
+          avlRev: 0,  fuelRev: 0,  videoRev: 0,
+          total: 0
+        };
       }
 
-      if (reglasConteo.avlInstalaciones.servicio.includes(tipoServicio) && reglasConteo.avlInstalaciones.hardware.includes(tipoHardware)) {
+      // INSTALACIONES
+      if (reglasConteo.avlInstalaciones.servicio.includes(tipoServicio) &&
+          reglasConteo.avlInstalaciones.hardware.includes(tipoHardware)) {
         groupedData[mes].avlInst++;
         totalAVLInst++;
+        if (tipoHardware?.startsWith("VIDEO")) {
+          groupedData[mes].videoInst++;
+          totalVideoInst++;
+        }
       }
-      if (reglasConteo.fuelInstalaciones.servicio.includes(tipoServicio) && reglasConteo.fuelInstalaciones.hardware.includes(tipoHardware)) {
+      if (reglasConteo.fuelInstalaciones.servicio.includes(tipoServicio) &&
+          reglasConteo.fuelInstalaciones.hardware.includes(tipoHardware)) {
         groupedData[mes].fuelInst++;
         totalFuelInst++;
       }
-      if (reglasConteo.avlRevisiones.servicio.includes(tipoServicio) && reglasConteo.avlRevisiones.hardware.includes(tipoHardware)) {
+
+      // REVISIONES
+      if (reglasConteo.avlRevisiones.servicio.includes(tipoServicio) &&
+          reglasConteo.avlRevisiones.hardware.includes(tipoHardware)) {
         groupedData[mes].avlRev++;
         totalAVLRev++;
+        if (tipoHardware?.startsWith("VIDEO")) {
+          groupedData[mes].videoRev++;
+          totalVideoRev++;
+        }
       }
-      if (reglasConteo.fuelRevisiones.servicio.includes(tipoServicio) && reglasConteo.fuelRevisiones.hardware.includes(tipoHardware)) {
+      if (reglasConteo.fuelRevisiones.servicio.includes(tipoServicio) &&
+          reglasConteo.fuelRevisiones.hardware.includes(tipoHardware)) {
         groupedData[mes].fuelRev++;
         totalFuelRev++;
       }
 
+      // Total mensual (sin video para no duplicar)
       groupedData[mes].total =
         groupedData[mes].avlInst +
         groupedData[mes].fuelInst +
@@ -75,18 +95,21 @@ fetch(URL)
 
     const totalGeneral = totalAVLInst + totalFuelInst + totalAVLRev + totalFuelRev;
 
-    // Generación de la tabla
+    // ======= TABLA =======
     const tableBody = document.querySelector('#data-table tbody');
     MES_ORDENADO.forEach(mes => {
-      if (groupedData[mes]) {
+      const d = groupedData[mes];
+      if (d) {
         tableBody.innerHTML += `
           <tr>
             <td class="bold">${mes.charAt(0).toUpperCase() + mes.slice(1)}</td>
-            <td>${groupedData[mes].avlInst}</td>
-            <td>${groupedData[mes].fuelInst}</td>
-            <td>${groupedData[mes].avlRev}</td>
-            <td>${groupedData[mes].fuelRev}</td>
-            <td class="bold">${groupedData[mes].total}</td>
+            <td>${d.avlInst}</td>
+            <td>${d.fuelInst}</td>
+            <td>${d.videoInst}</td>
+            <td>${d.avlRev}</td>
+            <td>${d.fuelRev}</td>
+            <td>${d.videoRev}</td>
+            <td class="bold">${d.total}</td>
           </tr>`;
       }
     });
@@ -96,50 +119,136 @@ fetch(URL)
         <td class="bold">Total</td>
         <td class="bold">${totalAVLInst}</td>
         <td class="bold">${totalFuelInst}</td>
+        <td class="bold">${totalVideoInst}</td>
         <td class="bold">${totalAVLRev}</td>
         <td class="bold">${totalFuelRev}</td>
+        <td class="bold">${totalVideoRev}</td>
         <td class="bold">${totalGeneral}</td>
       </tr>`;
 
+    // ======= REGISTRAR DATALABELS =======
+    if (window.ChartDataLabels) {
+      Chart.register(ChartDataLabels);
+    }
+
     const labels = MES_ORDENADO.map(mes => mes.charAt(0).toUpperCase() + mes.slice(1));
 
-    const ctxComparison = document.getElementById('comparison-chart').getContext('2d');
-    const ctxResults = document.getElementById('chart').getContext('2d');
-
-    // Gráfico de Comparación
-    new Chart(ctxComparison, {
+    // ======= GRÁFICO DE COMPARACIÓN =======
+    new Chart(document.getElementById('comparison-chart').getContext('2d'), {
       type: 'line',
       data: {
         labels,
         datasets: [
-          { label: 'AVL Instalaciones', data: MES_ORDENADO.map(mes => groupedData[mes]?.avlInst || 0), borderColor: 'blue', pointRadius: 5, pointBackgroundColor: 'blue' },
-          { label: 'Fuel Instalaciones', data: MES_ORDENADO.map(mes => groupedData[mes]?.fuelInst || 0), borderColor: 'orange', pointRadius: 5, pointBackgroundColor: 'orange' },
-          { label: 'AVL Revisiones', data: MES_ORDENADO.map(mes => groupedData[mes]?.avlRev || 0), borderColor: 'green', pointRadius: 5, pointBackgroundColor: 'green' },
-          { label: 'Fuel Revisiones', data: MES_ORDENADO.map(mes => groupedData[mes]?.fuelRev || 0), borderColor: 'red', pointRadius: 5, pointBackgroundColor: 'red' }
+          { label: 'AVL Instalaciones',
+            data: MES_ORDENADO.map(m => groupedData[m]?.avlInst  || 0),
+            borderColor: 'blue', borderWidth: 2, pointRadius: 5, pointBackgroundColor: 'blue', order: 1
+          },
+          { label: 'Fuel Instalaciones',
+            data: MES_ORDENADO.map(m => groupedData[m]?.fuelInst || 0),
+            borderColor: 'orange', borderWidth: 2, pointRadius: 5, pointBackgroundColor: 'orange', order: 1
+          },
+          { label: 'AVL Revisiones',
+            data: MES_ORDENADO.map(m => groupedData[m]?.avlRev   || 0),
+            borderColor: 'green', borderWidth: 2, pointRadius: 5, pointBackgroundColor: 'green', order: 1
+          },
+          { label: 'Fuel Revisiones',
+            data: MES_ORDENADO.map(m => groupedData[m]?.fuelRev  || 0),
+            borderColor: 'red', borderWidth: 2, pointRadius: 5, pointBackgroundColor: 'red', order: 1
+          },
+          // VIDEO encima
+          { label: 'Video Instalaciones',
+            data: MES_ORDENADO.map(m => groupedData[m]?.videoInst || 0),
+            borderColor: 'pink', borderWidth: 2, pointRadius: 6, pointBackgroundColor: 'pink', order: 10
+          },
+          { label: 'Video Revisiones',
+            data: MES_ORDENADO.map(m => groupedData[m]?.videoRev || 0),
+            borderColor: 'purple', borderWidth: 2, pointRadius: 6, pointBackgroundColor: 'purple', order: 10
+          }
         ]
       },
       options: {
-        scales: { y: { beginAtZero: true, ticks: { stepSize: 50, max: 400 } } },
-        plugins: { datalabels: { display: true, align: 'top', color: 'black', font: { weight: 'bold', size: 12 } } }
-      },
-      plugins: [ChartDataLabels]
+        responsive: true,
+        maintainAspectRatio: false,     // <<--- para que use el alto del contenedor
+        layout: { padding: { top: 20 } }, // aire superior
+        scales: {
+          y: {
+            beginAtZero: true,
+            ticks: { stepSize: 50, font: { weight: 'bold' }, color: '#000' }
+          },
+          x: { ticks: { font: { weight: 'bold' }, color: '#000' } }
+        },
+        plugins: {
+          legend: { display: true },
+          datalabels: {
+            display: true,
+            color: 'black',
+            font: { weight: 'bold', size: 12 },
+            align: 'top',
+            anchor: 'end',
+            offset: 8,
+            clip: false,
+            formatter: (v) => (v > 0 ? v : null) // ocultar ceros
+          }
+        }
+      }
     });
 
-    // Gráfico de Resultados
-    new Chart(ctxResults, {
+    // ======= GRÁFICO COMPARATIVO GENERAL =======
+    new Chart(document.getElementById('chart').getContext('2d'), {
       type: 'line',
       data: {
         labels,
         datasets: [
-          { label: 'INSTALACIONES', data: MES_ORDENADO.map(mes => (groupedData[mes]?.avlInst || 0) + (groupedData[mes]?.fuelInst || 0)), borderColor: 'green', pointRadius: 5, pointBackgroundColor: 'green' },
-          { label: 'REVISIONES', data: MES_ORDENADO.map(mes => (groupedData[mes]?.avlRev || 0) + (groupedData[mes]?.fuelRev || 0)), borderColor: 'red', pointRadius: 5, pointBackgroundColor: 'red' }
+          {
+            label: 'INSTALACIONES',
+            data: MES_ORDENADO.map(m => (groupedData[m]?.avlInst || 0) + (groupedData[m]?.fuelInst || 0)),
+            borderColor: 'green',
+            backgroundColor: 'rgba(0, 128, 0, 0.2)',
+            borderWidth: 2,
+            pointRadius: 5,
+            pointBackgroundColor: 'green'
+          },
+          {
+            label: 'REVISIONES',
+            data: MES_ORDENADO.map(m => (groupedData[m]?.avlRev || 0) + (groupedData[m]?.fuelRev || 0)),
+            borderColor: 'red',
+            backgroundColor: 'rgba(255, 0, 0, 0.2)',
+            borderWidth: 2,
+            pointRadius: 5,
+            pointBackgroundColor: 'red'
+          }
         ]
       },
       options: {
-        scales: { y: { beginAtZero: true, ticks: { stepSize: 50, max: 450 } } },
-        plugins: { datalabels: { display: true, align: 'top', color: 'black', font: { weight: 'bold', size: 12 } } }
-      },
-      plugins: [ChartDataLabels]
+  responsive: true,
+  maintainAspectRatio: false,
+  layout: { padding: { top: 24 } }, // un poco de aire para las etiquetas
+  scales: {
+    y: {
+      beginAtZero: true,
+      min: 0,
+      max: 550,                          // <<< límite superior a 550
+      ticks: { stepSize: 50, font: { weight: 'bold' }, color: '#000' }
+    },
+    x: {
+      ticks: { font: { weight: 'bold' }, color: '#000' }
+    }
+  },
+  plugins: {
+    legend: { display: true },
+    datalabels: {
+      display: true,
+      color: 'black',
+      font: { weight: 'bold', size: 12 },
+      align: 'top',
+      anchor: 'end',
+      offset: 8,
+      clip: false,
+      formatter: (v) => (v > 0 ? v : null)
+    }
+  }
+}
+
     });
   })
   .catch(error => console.error('Error:', error));
