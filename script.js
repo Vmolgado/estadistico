@@ -53,7 +53,6 @@ fetch(URL)
         };
       }
 
-      // INSTALACIONES
       if (reglasConteo.avlInstalaciones.servicio.includes(tipoServicio) &&
           reglasConteo.avlInstalaciones.hardware.includes(tipoHardware)) {
         groupedData[mes].avlInst++;
@@ -69,7 +68,6 @@ fetch(URL)
         totalFuelInst++;
       }
 
-      // REVISIONES
       if (reglasConteo.avlRevisiones.servicio.includes(tipoServicio) &&
           reglasConteo.avlRevisiones.hardware.includes(tipoHardware)) {
         groupedData[mes].avlRev++;
@@ -85,7 +83,6 @@ fetch(URL)
         totalFuelRev++;
       }
 
-      // Total mensual (sin video para no duplicar)
       groupedData[mes].total =
         groupedData[mes].avlInst +
         groupedData[mes].fuelInst +
@@ -95,7 +92,6 @@ fetch(URL)
 
     const totalGeneral = totalAVLInst + totalFuelInst + totalAVLRev + totalFuelRev;
 
-    // ======= TABLA =======
     const tableBody = document.querySelector('#data-table tbody');
     MES_ORDENADO.forEach(mes => {
       const d = groupedData[mes];
@@ -126,14 +122,12 @@ fetch(URL)
         <td class="bold">${totalGeneral}</td>
       </tr>`;
 
-    // ======= REGISTRAR DATALABELS =======
     if (window.ChartDataLabels) {
       Chart.register(ChartDataLabels);
     }
 
     const labels = MES_ORDENADO.map(mes => mes.charAt(0).toUpperCase() + mes.slice(1));
 
-    // ======= GRÁFICO DE COMPARACIÓN =======
     new Chart(document.getElementById('comparison-chart').getContext('2d'), {
       type: 'line',
       data: {
@@ -155,7 +149,6 @@ fetch(URL)
             data: MES_ORDENADO.map(m => groupedData[m]?.fuelRev  || 0),
             borderColor: 'red', borderWidth: 2, pointRadius: 5, pointBackgroundColor: 'red', order: 1
           },
-          // VIDEO encima
           { label: 'Video Instalaciones',
             data: MES_ORDENADO.map(m => groupedData[m]?.videoInst || 0),
             borderColor: 'pink', borderWidth: 2, pointRadius: 6, pointBackgroundColor: 'pink', order: 10
@@ -168,8 +161,8 @@ fetch(URL)
       },
       options: {
         responsive: true,
-        maintainAspectRatio: false,     // <<--- para que use el alto del contenedor
-        layout: { padding: { top: 20 } }, // aire superior
+        maintainAspectRatio: false,
+        layout: { padding: { top: 20 } },
         scales: {
           y: {
             beginAtZero: true,
@@ -187,13 +180,12 @@ fetch(URL)
             anchor: 'end',
             offset: 8,
             clip: false,
-            formatter: (v) => (v > 0 ? v : null) // ocultar ceros
+            formatter: (v) => (v > 0 ? v : null)
           }
         }
       }
     });
 
-    // ======= GRÁFICO COMPARATIVO GENERAL =======
     new Chart(document.getElementById('chart').getContext('2d'), {
       type: 'line',
       data: {
@@ -220,35 +212,34 @@ fetch(URL)
         ]
       },
       options: {
-  responsive: true,
-  maintainAspectRatio: false,
-  layout: { padding: { top: 24 } }, // un poco de aire para las etiquetas
-  scales: {
-    y: {
-      beginAtZero: true,
-      min: 0,
-      max: 550,                          // <<< límite superior a 550
-      ticks: { stepSize: 50, font: { weight: 'bold' }, color: '#000' }
-    },
-    x: {
-      ticks: { font: { weight: 'bold' }, color: '#000' }
-    }
-  },
-  plugins: {
-    legend: { display: true },
-    datalabels: {
-      display: true,
-      color: 'black',
-      font: { weight: 'bold', size: 12 },
-      align: 'top',
-      anchor: 'end',
-      offset: 8,
-      clip: false,
-      formatter: (v) => (v > 0 ? v : null)
-    }
-  }
-}
-
+        responsive: true,
+        maintainAspectRatio: false,
+        layout: { padding: { top: 24 } },
+        scales: {
+          y: {
+            beginAtZero: true,
+            min: 0,
+            max: 550,
+            ticks: { stepSize: 50, font: { weight: 'bold' }, color: '#000' }
+          },
+          x: {
+            ticks: { font: { weight: 'bold' }, color: '#000' }
+          }
+        },
+        plugins: {
+          legend: { display: true },
+          datalabels: {
+            display: true,
+            color: 'black',
+            font: { weight: 'bold', size: 12 },
+            align: 'top',
+            anchor: 'end',
+            offset: 8,
+            clip: false,
+            formatter: (v) => (v > 0 ? v : null)
+          }
+        }
+      }
     });
   })
   .catch(error => console.error('Error:', error));
